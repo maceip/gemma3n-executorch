@@ -1,0 +1,30 @@
+# model files (large binaries)
+*.pte
+
+# python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.so
+.eggs/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# virtual environments
+venv/
+.venv/
+ENV/
+env/
+
+# ide
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# misc
+.DS_Store
+*.log
