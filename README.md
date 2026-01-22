@@ -7,10 +7,14 @@ export google gemma3n instruction-tuned models (text-only) to executorch pte for
 
 ## models
 
-| model | huggingface | text params | layers | output size |
-|-------|-------------|-------------|--------|-------------|
-| e2b-it | google/gemma-3n-E2B-it | 4.46b | 30 | 8.4 gb |
-| e4b-it | google/gemma-3n-E4B-it | 7.40b | 35 | 13.1 gb |
+| model | quant | text params | layers | size | download |
+|-------|-------|-------------|--------|------|----------|
+| e2b-it | bf16 | 4.46b | 30 | 8.4 gb | [huggingface](https://huggingface.co/macmacmacmac/gemma-3n-E2B-it-pte) |
+| e2b-it | int8 | 4.46b | 30 | 7.0 gb | [huggingface](https://huggingface.co/macmacmacmac/gemma-3n-E2B-it-pte) |
+| e4b-it | bf16 | 7.40b | 35 | 13.1 gb | [huggingface](https://huggingface.co/macmacmacmac/gemma-3n-E4B-it-pte) |
+| e4b-it | int8 | 7.40b | 35 | 9.6 gb | [huggingface](https://huggingface.co/macmacmacmac/gemma-3n-E4B-it-pte) |
+
+source models: [google/gemma-3n-E2B-it](https://huggingface.co/google/gemma-3n-E2B-it) | [google/gemma-3n-E4B-it](https://huggingface.co/google/gemma-3n-E4B-it)
 
 ## requirements
 
