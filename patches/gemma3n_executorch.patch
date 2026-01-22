@@ -1,0 +1,46 @@
+--- a/transformers/models/gemma3n/modeling_gemma3n.py
++++ b/transformers/models/gemma3n/modeling_gemma3n.py
+@@ -1010,6 +1010,12 @@ class Gemma3nTextMLP(nn.Module):
+         self.down_proj = nn.Linear(self.intermediate_size, self.hidden_size, bias=False)
+         self.act_fn = ACT2FN[config.hidden_activation]
+         self.activation_sparsity = config.activation_sparsity_pattern[layer_idx]
++        # Pre-compute std_multiplier at init time to avoid erfinv during forward pass
++        # This enables export to ExecuTorch which doesn't support erfinv
++        if self.activation_sparsity > 0.0:
++            normal_dist = torch.distributions.normal.Normal(0, 1)
++            std_multiplier = normal_dist.icdf(torch.tensor(self.activation_sparsity, dtype=torch.float32))
++            self.register_buffer("_std_multiplier", std_multiplier, persistent=False)
+
+     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
+         gate_proj = self.gate_proj(hidden_states)
+@@ -1021,16 +1027,10 @@ class Gemma3nTextMLP(nn.Module):
+         return down_proj
+
+     def _gaussian_topk(self, inputs: torch.Tensor) -> torch.Tensor:
+-        target_sparsity_tensor = torch.tensor(self.activation_sparsity, dtype=torch.float32, device=inputs.device)
+-        # normal_dist and std_multiplier are adapted from jax.scipy.stats.norm.ppf().
+-        #
+-        # References:
+-        #   *   https://docs.jax.dev/en/latest/_autosummary/jax.scipy.stats.norm.ppf.html
+-        #   *   https://pytorch.org/docs/stable/distributions.html#torch.distributions.normal.Normal
+-        #   *   https://pytorch.org/docs/stable/distributions.html#torch.distributions.transformed_distribution.TransformedDistribution.icdf
+-        normal_dist = torch.distributions.normal.Normal(0, 1)
+-        std_multiplier: torch.Tensor = normal_dist.icdf(target_sparsity_tensor)
+-        std_multiplier = std_multiplier.type(inputs.dtype)
++        # Use pre-computed std_multiplier to avoid erfinv during tracing/export
++        # The erfinv operator is not supported by ExecuTorch Core ATen opset
++        # Pre-computation happens in __init__ and stores result in _std_multiplier buffer
++        std_multiplier = self._std_multiplier.to(inputs.dtype)
+         inputs_mean = torch.mean(inputs, dim=-1, keepdim=True)
+         inputs_std = torch.std(inputs, dim=-1, keepdim=True, unbiased=False)
+         cutoff_x = inputs_mean + inputs_std * std_multiplier
+@@ -1116,7 +1116,8 @@ class Gemma3nTextAltUp(nn.Module):
+         innovation = activated - predictions[self.config.altup_active_idx]  # (batch, num_tokens, hidden_size)
+         innovation = innovation.repeat(self.config.altup_num_inputs, 1, 1, 1)  # Repeat on dim0 to match predictions
+
+-        if self.config.altup_coef_clip is not None:
++        # Add self.training guard to prevent mutation of constants during export
++        if self.training and self.config.altup_coef_clip is not None:
+             self.correction_coefs.weight.data.clamp_(-self.config.altup_coef_clip, self.config.altup_coef_clip)
+
+         # all_coefs adapted from jax.numpy.einsum("...p,pi->...i", ...)
