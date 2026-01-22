@@ -2,6 +2,9 @@
 
 export google gemma3n instruction-tuned models (text-only) to executorch pte format for mobile deployment
 
+> [!WARNING]
+> These exports contain only the text decoder (language_model + lm_head). The vision and audio towers from the full multimodal gemma3n models are not included. Use these exports for text-only inference tasks.
+
 ## models
 
 | model | huggingface | text params | layers | output size |
