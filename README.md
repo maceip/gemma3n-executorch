@@ -80,11 +80,13 @@ python validate.py /path/to/model.pte
 int8 weight quantization via torchao works well and is recommended for mobile deployment. this reduces model size by ~15-25% compared to bf16 with minimal quality degradation.
 
 ### int4 (not yet available)
-int4 quantization for gemma3n is currently blocked by two issues:
+int4 quantization for gemma3n is currently blocked by several issues:
 
-1. **torchao int4**: requires gpu kernels for inference ("X must be BF16 and contiguous on GPU") - not suitable for cpu-only mobile deployment
+1. **torchao int4_weight_only**: requires gpu kernels for inference ("X must be BF16 and contiguous on GPU") - not suitable for cpu-only mobile deployment
 
-2. **pt2e int4 with xnnpack**: the model's unique architecture (altup mechanism, sparse mlp with gaussian_topk) causes dtype conversion issues during quantization observer insertion. specifically, integer tensors used for indexing operations get converted to float32, causing "tensors used as indices must be long, int, byte or bool tensors" errors.
+2. **torchao Int8DynamicActivationInt4WeightConfig**: works on CPU for forward pass but fails at executorch conversion with "Missing out variants: torchao::dequantize_affine" - the torchao quantized ops don't have executorch-compatible out variants
+
+3. **pt2e int4 with xnnpack**: the model's unique architecture (altup mechanism, sparse mlp with gaussian_topk) causes dtype conversion issues during quantization observer insertion. specifically, integer tensors used for indexing operations get converted to float32, causing "tensors used as indices must be long, int, byte or bool tensors" errors
 
 we are tracking upstream fixes. contributions welcome via PR.
 

@@ -21,6 +21,8 @@ KNOWN ISSUES:
 
 2. Alternative approaches tried and failed:
    - torchao int4_weight_only: Requires GPU kernels ("X must be BF16 and contiguous on GPU")
+   - torchao Int8DynamicActivationInt4WeightConfig: Works on CPU for forward pass but
+     to_executorch fails with "Missing out variants: torchao::dequantize_affine"
    - quanto library: Tensor subclass issues with to_edge
    - Int8DynActInt4WeightQuantizer: Missing out variants for quantized ops
 
